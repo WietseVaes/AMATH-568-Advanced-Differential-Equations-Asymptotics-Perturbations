@@ -1,0 +1,61 @@
+tspan = linspace(0,20,400);
+
+
+
+A = 1;
+epsilon = .1;
+
+
+%% first
+firstapprox = A*sin(tspan)+epsilon*A^5/16*(5*tspan.*cos(tspan)-(47+14*cos(2*tspan)-cos(4*tspan)).*sin(tspan));
+second = A*sin((1+A^4*10/32*epsilon)*tspan)+epsilon*(5/48*A^5*sin((1+A^4*10/32*epsilon)*tspan) ...
+    -5/128*A^5*sin(3*(1+A^4*10/32*epsilon)*tspan)+1/384*A^5*sin(5*(1+A^4*10/32*epsilon)*tspan));
+[t,y] = ode45(@(t,y) osc(t,y,epsilon),tspan,[0; A]);
+
+plot(tspan,firstapprox,'b--'); hold on;
+plot(tspan,second,'r-.'); 
+plot(tspan,y(:,1),'k'); 
+xlabel('Time t'); ylabel('y');
+legend('Perturbation expansion','Poincare-Lindstedt','MATLAB ode45')
+title('Different methods to approximate $\frac{d^2y}{dt^2}+y+\epsilon y^5=0$','Interpreter','latex')
+
+
+%% second
+clf
+tspan = linspace(0,40,800);
+epsilons = [.01,.1,.2,.3];
+A = 10;
+
+
+for index1 = 1:length(epsilons)
+    epsilon = epsilons(index1);
+    firstapprox2 = 2*A./sqrt(A^2+(4-A^2)*exp(-epsilon*tspan)).*sin(tspan);
+    secondapprox2 = A*sin((1+epsilon^2*(11/192*A^2-4))*tspan);
+
+    [t,y] = ode45(@(t,y) osc(t,y,epsilon),tspan,[0; A]);
+    
+    figure(index1)
+    plot(tspan,firstapprox2,'b--'); hold on;
+    plot(tspan,secondapprox2,'r-.');
+    plot(tspan,y(:,1),'k');
+    xlabel('Time t'); ylabel('y');
+    legend('Multiple scale expansion','Poincare-Lindstedt','MATLAB ode45')
+    title({"Different methods to approximate Rayleigh's equation", ['epsilon = ',num2str(epsilon)]},'Interpreter','latex')
+
+    figure(index1+length(epsilons))
+     plot(tspan,abs(firstapprox2-y(:,1)'),'b*'); hold on;
+    plot(tspan,abs(secondapprox2-y(:,1)'),'r*');
+    xlabel('Time t'); ylabel('y');
+    legend('Multiple scale expansion error','Poincare-Lindstedt error')
+    title({"Errors of different methods to approximate Rayleigh's equation", ['epsilon = ',num2str(epsilon)]},'Interpreter','latex')
+end
+
+%% functions
+function dydt = osc(t,y,epsilon)
+dydt = [y(2);-y(1)-epsilon*y(1).^5];
+end
+
+function dydt = limitcyc(t,y,epsilon)
+dydt = [y(2);-y(1)+epsilon*(y(2)-y(2).^3/3)];
+end
+
